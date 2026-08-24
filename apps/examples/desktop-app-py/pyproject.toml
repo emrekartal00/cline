@@ -9,7 +9,10 @@ description = "Python desktop shell for Cline: a pywebview window that hosts the
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-dependencies = ["pywebview>=5.1"]
+# nodejs-wheel-binaries ships a Node.js (>=22) runtime inside a pip wheel so
+# the TypeScript sidecar bundle runs with no system Node install and no
+# manually-handled executable — Python spawns it directly.
+dependencies = ["pywebview>=5.1", "nodejs-wheel-binaries>=22"]
 
 [project.optional-dependencies]
 # Linux fallback when GTK/WebKit2 (PyGObject) is unavailable.

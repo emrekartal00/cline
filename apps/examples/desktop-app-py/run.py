@@ -70,8 +70,31 @@ def open_browser_when_ready(url: str) -> None:
     threading.Thread(target=poll, daemon=True, name="open-browser").start()
 
 
+def ensure_node_runtime() -> None:
+    """Make sure a Node.js runtime exists to run the sidecar bundle.
+
+    Skipped when a compiled sidecar binary for this platform is already
+    present (then no Node is needed).
+    """
+    from cline_desktop.config import (
+        AppPaths,
+        ensure_node_runtime as _ensure,
+        find_sidecar_binary,
+    )
+
+    try:
+        paths = AppPaths.discover()
+    except FileNotFoundError:
+        return
+    if find_sidecar_binary(paths.desktop_app_dir):
+        return
+    _ensure()
+
+
 def main() -> int:
     from cline_desktop.__main__ import main as cli
+
+    ensure_node_runtime()
 
     headless = (
         running_in_ipython()

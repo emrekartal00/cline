@@ -108,8 +108,34 @@ def find_sidecar_binary(desktop_app_dir: Path) -> Path | None:
     return path if path.is_file() else None
 
 
+def find_pip_node() -> str | None:
+    """Node.js shipped inside the `nodejs-wheel-binaries` pip package.
+
+    This is how the app gets Node on locked-down machines: it arrives via pip
+    (like pywebview's compiled parts) and is spawned by Python — no system
+    install and no manually-handled executable.
+    """
+    import importlib.util
+
+    spec = importlib.util.find_spec("nodejs_wheel")
+    if not spec or not spec.origin:
+        return None
+    pkgdir = Path(spec.origin).parent
+    name = "node.exe" if sys.platform == "win32" else "node"
+    for candidate in (pkgdir / "bin" / name, pkgdir / name):
+        if candidate.is_file():
+            return str(candidate)
+    for root, _, files in os.walk(pkgdir):
+        if name in files:
+            return str(Path(root) / name)
+    return None
+
+
 def find_node() -> str | None:
-    """Find a Node.js (>=22) executable for running the bundled sidecar."""
+    """Find a Node.js (>=22) executable for running the bundled sidecar.
+
+    Order: PATH -> common system locations -> the pip-provided Node.
+    """
     found = shutil.which("node")
     if found:
         return found
@@ -128,7 +154,30 @@ def find_node() -> str | None:
     for candidate in candidates:
         if candidate.is_file() and os.access(candidate, os.X_OK):
             return str(candidate)
-    return None
+    return find_pip_node()
+
+
+def ensure_node_runtime() -> str | None:
+    """Return a Node.js path, pip-installing `nodejs-wheel-binaries` if needed.
+
+    Used by the launcher so a fresh machine with only Python gets a working
+    Node runtime without any manual install.
+    """
+    import subprocess
+
+    node = find_node()
+    if node:
+        return node
+    print("No Node.js found — installing it as a pip package (nodejs-wheel-binaries)...")
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "nodejs-wheel-binaries"]
+    )
+    if result.returncode != 0:
+        return None
+    import importlib
+
+    importlib.invalidate_caches()
+    return find_pip_node()
 
 
 def find_sidecar_node_bundle(desktop_app_dir: Path) -> Path | None:
