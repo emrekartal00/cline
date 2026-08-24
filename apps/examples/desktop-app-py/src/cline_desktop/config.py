@@ -108,6 +108,35 @@ def find_sidecar_binary(desktop_app_dir: Path) -> Path | None:
     return path if path.is_file() else None
 
 
+def find_node() -> str | None:
+    """Find a Node.js (>=22) executable for running the bundled sidecar."""
+    found = shutil.which("node")
+    if found:
+        return found
+    candidates = [
+        Path("/opt/homebrew/bin/node"),
+        Path("/usr/local/bin/node"),
+        Path("/opt/homebrew/opt/node@24/bin/node"),
+        Path("/opt/homebrew/opt/node@22/bin/node"),
+    ]
+    if sys.platform == "win32":
+        for env_var in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"):
+            base = os.environ.get(env_var)
+            if base:
+                candidates.append(Path(base) / "nodejs" / "node.exe")
+                candidates.append(Path(base) / "Programs" / "nodejs" / "node.exe")
+    for candidate in candidates:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
+def find_sidecar_node_bundle(desktop_app_dir: Path) -> Path | None:
+    """Single-file Node bundle built by `bun build --target=node` (no .exe)."""
+    path = desktop_app_dir / "sidecar" / "dist-node" / "sidecar-node.mjs"
+    return path if path.is_file() else None
+
+
 # Release that hosts precompiled sidecar binaries too large to commit
 # (GitHub caps repo files at 100 MB; the Windows binary is ~134 MB).
 SIDECAR_RELEASE_URL_BASE = (

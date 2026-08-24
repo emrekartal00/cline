@@ -43,8 +43,8 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 }
 
 async function main() {
-	if (!BunRuntime) {
-		throw new Error("sidecar must be run with Bun");
+	if (!BunRuntime && !process.versions.node) {
+		throw new Error("sidecar requires Bun or Node.js (>=22)");
 	}
 
 	// When launched from Finder/the Dock the app inherits launchd's minimal
@@ -128,7 +128,7 @@ async function main() {
 		void shutdown("code_sidecar_before_exit");
 	});
 
-	const { port, approvalToken } = startServer(ctx, SIDECAR_PORT, shutdown);
+	const { port, approvalToken } = await startServer(ctx, SIDECAR_PORT, shutdown);
 	observability.logger.log("Desktop sidecar ready", {
 		port,
 		mode: SIDECAR_MODE,

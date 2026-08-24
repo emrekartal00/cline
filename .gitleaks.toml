@@ -2,3 +2,7 @@ title = "Cline SDK secret scanning"
 
 [extend]
 useDefault = true
+
+[allowlist]
+description = "Generated bundles: minified vendored library code trips PEM/key-name heuristics"
+paths = ['''apps/examples/desktop-app/sidecar/dist-node/.*''']

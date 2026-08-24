@@ -167,15 +167,25 @@ function captureDesktopError(
 // Bun HTTP + WebSocket server
 // ---------------------------------------------------------------------------
 
-export function startServer(
+export async function startServer(
 	ctx: SidecarContext,
 	preferredPort: number = SIDECAR_PORT,
 	onShutdown?: (reason?: string) => Promise<void>,
 	approvalToken = process.env.CLINE_SIDECAR_APPROVAL_TOKEN?.trim() ||
 		randomUUID(),
-): { port: number; approvalToken: string } {
+): Promise<{ port: number; approvalToken: string }> {
+	// Node fallback (>=22): same fetch/websocket handlers behind a
+	// Bun.serve-compatible adapter. Falls back to an OS-assigned port on
+	// EADDRINUSE internally.
 	if (!BunRuntime) {
-		throw new Error("sidecar must be run with Bun");
+		const { nodeServe } = await import("./node-serve");
+		const server = await nodeServe({
+			hostname: SIDECAR_HOST,
+			port: preferredPort,
+			fetch: createFetchHandler(ctx, onShutdown, approvalToken),
+			websocket: createWebSocketHandler(ctx),
+		});
+		return { port: server.port, approvalToken };
 	}
 
 	let server: SidecarServer | undefined;

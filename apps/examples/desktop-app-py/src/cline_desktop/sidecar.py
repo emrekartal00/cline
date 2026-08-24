@@ -68,10 +68,23 @@ class SidecarSupervisor:
         if compiled:
             return [str(compiled)], self._paths.desktop_app_dir
 
-        # No local binary for this platform: fetch the prebuilt one from the
-        # GitHub release (the Windows binary is too large to ship in the repo).
-        from .config import download_sidecar_binary, sidecar_binary_path
+        # Preferred exe-free path: the committed single-file JS bundle run
+        # under Node.js (>=22). No executables shipped or downloaded.
+        from .config import (
+            download_sidecar_binary,
+            find_node,
+            find_sidecar_node_bundle,
+            sidecar_binary_path,
+        )
 
+        bundle = find_sidecar_node_bundle(self._paths.desktop_app_dir)
+        node = find_node() if bundle else None
+        if bundle and node:
+            log.info("Running sidecar bundle under Node.js: %s", node)
+            return [node, str(bundle)], self._paths.desktop_app_dir
+
+        # Otherwise fetch the prebuilt compiled binary from the GitHub
+        # release (the Windows one is too large to ship in the repo).
         log.info(
             "No sidecar binary for this platform; downloading prebuilt binary "
             "(one-time, ~85-135 MB)..."
@@ -84,14 +97,15 @@ class SidecarSupervisor:
         bun = find_bun()
         if not bun:
             raise SidecarError(
-                "No compiled sidecar binary found, the prebuilt-binary download "
-                "failed, and bun is not installed.\n"
-                f"  looked for binary at: {sidecar_binary_path(self._paths.desktop_app_dir)}\n"
-                f"  desktop-app dir in use: {self._paths.desktop_app_dir}\n"
-                "  bun searched on PATH plus ~/.bun/bin, /opt/homebrew/bin, /usr/local/bin\n"
-                "Fixes: check your internet connection and rerun, run "
-                "`bun run build:sidecar:bin` in apps/examples/desktop-app, or "
-                "install bun (https://bun.sh)."
+                "Could not find any way to run the sidecar backend.\n"
+                f"  compiled binary: not found at "
+                f"{sidecar_binary_path(self._paths.desktop_app_dir)}\n"
+                f"  node bundle: {'found but Node.js is not installed' if bundle else 'not found'} "
+                f"({self._paths.desktop_app_dir / 'sidecar' / 'dist-node' / 'sidecar-node.mjs'})\n"
+                "  prebuilt-binary download: failed (see warnings above)\n"
+                "  bun: not installed\n"
+                "Easiest fix without any .exe files: install Node.js >=22 from "
+                "https://nodejs.org (official installer) and rerun."
             )
         entry = self._paths.desktop_app_dir / "sidecar" / "index.ts"
         return [bun, "run", str(entry)], self._paths.workspace_root

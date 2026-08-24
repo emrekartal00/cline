@@ -33,10 +33,10 @@
 		"@cline/llms": "workspace:*",
 		"@cline/shared": "workspace:*",
 		"@cline/ui": "workspace:*",
-		"@pierre/diffs": "^1.3.0",
 		"@fontsource-variable/geist-mono": "^5.2.8",
 		"@fontsource-variable/inter": "^5.2.8",
 		"@hookform/resolvers": "^3.9.1",
+		"@pierre/diffs": "^1.3.0",
 		"@radix-ui/react-accordion": "1.2.12",
 		"@radix-ui/react-alert-dialog": "1.1.15",
 		"@radix-ui/react-aspect-ratio": "1.1.8",
@@ -69,8 +69,8 @@
 		"@streamdown/cjk": "^1.0.3",
 		"@tauri-apps/api": "^2.0.0",
 		"@tauri-apps/plugin-notification": "^2.0.0",
-		"autoprefixer": "^10.4.20",
 		"ansi-to-react": "^6.2.6",
+		"autoprefixer": "^10.4.20",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "1.1.1",
@@ -91,19 +91,21 @@
 		"streamdown": "^2.5.0",
 		"tailwind-merge": "^3.3.1",
 		"vaul": "^1.1.2",
+		"ws": "^8.20.0",
 		"zod": "^3.24.1"
 	},
 	"devDependencies": {
-		"@tauri-apps/cli": "^2.0.0",
 		"@tailwindcss/postcss": "^4.2.0",
+		"@tauri-apps/cli": "^2.0.0",
+		"@types/bun": "^1.3.14",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
+		"@types/ws": "^8.18.1",
 		"jsdom": "^26.0.0",
 		"postcss": "^8.5",
 		"tailwindcss": "^4.2.0",
 		"tw-animate-css": "1.3.3",
 		"typescript": "5.7.3",
-		"vitest": "^4.0.18",
-		"@types/bun": "^1.3.14"
+		"vitest": "^4.0.18"
 	}
 }
