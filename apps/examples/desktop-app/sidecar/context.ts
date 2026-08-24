@@ -1042,12 +1042,17 @@ export async function initializeSessionManager(
 		handleCoreSessionEvent(ctx, event);
 	});
 
-	try {
-		await ensureSharedHubClient(ctx, sessionManager.runtimeAddress);
-	} catch (error) {
-		unsubscribe();
-		await sessionManager.dispose("code_sidecar_hub_initialization_failed");
-		throw error;
+	// The shared-hub observer only applies when a hub exists. In local
+	// (in-process) mode there is no hub, so skip it instead of throwing
+	// "Unable to start or connect to the shared Cline Hub."
+	if (backendMode !== "local") {
+		try {
+			await ensureSharedHubClient(ctx, sessionManager.runtimeAddress);
+		} catch (error) {
+			unsubscribe();
+			await sessionManager.dispose("code_sidecar_hub_initialization_failed");
+			throw error;
+		}
 	}
 
 	ctx.sessionManager = sessionManager;
