@@ -156,31 +156,45 @@ class App:
             return 1
 
         if self.options.no_window:
-            log.info("Running headless. Open %s in a browser. Ctrl-C to stop.", url)
-            try:
-                while True:
-                    time.sleep(3600)
-            except KeyboardInterrupt:
-                pass
-            finally:
-                self.cleanup()
+            return self._run_in_browser(url)
+
+        # Try the native window; if the platform's webview can't start (e.g.
+        # Windows without the WebView2 runtime, where pywebview falls back to
+        # the legacy IE renderer and hits registry/policy restrictions), fall
+        # back to opening the UI in the default browser instead of crashing.
+        try:
+            import webview  # deferred: heavy import; browser mode needs no GUI libs
+
+            window = webview.create_window(
+                "Cline",
+                url,
+                width=1280,
+                height=800,
+                min_size=(900, 600),
+                js_api=Bridge(),
+            )
+            window.events.closed += self.cleanup
+            # private_mode=False is load-bearing: the webview persists provider
+            # settings and UI state in localStorage, which private mode wipes.
+            webview.start(private_mode=False, debug=self.options.debug)
+            self.cleanup()
             return 0
+        except Exception as err:  # noqa: BLE001 - any GUI failure -> browser
+            log.warning("Native window unavailable (%s); opening in browser.", err)
+            return self._run_in_browser(url)
 
-        import webview  # deferred: heavy import, and --no-window must work without it
+    def _run_in_browser(self, url: str) -> int:
+        import webbrowser
 
-        window = webview.create_window(
-            "Cline",
-            url,
-            width=1280,
-            height=800,
-            min_size=(900, 600),
-            js_api=Bridge(),
-        )
-        window.events.closed += self.cleanup
-        # private_mode=False is load-bearing: the webview persists provider
-        # settings and UI state in localStorage, which private mode wipes.
-        webview.start(private_mode=False, debug=self.options.debug)
-        self.cleanup()
+        webbrowser.open(url)
+        log.info("Cline is running at %s — open it in your browser. Ctrl-C to stop.", url)
+        try:
+            while True:
+                time.sleep(3600)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.cleanup()
         return 0
 
     # -- teardown ---------------------------------------------------------------
