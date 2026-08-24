@@ -121,9 +121,12 @@ def download_sidecar_binary(desktop_app_dir: Path) -> Path | None:
     Returns the binary path, or None if the download failed (e.g. offline or
     no prebuilt binary published for this platform).
     """
+    import logging
+    import ssl
     import urllib.error
     import urllib.request
 
+    log = logging.getLogger("cline_desktop.config")
     target = sidecar_binary_path(desktop_app_dir)
     url = f"{SIDECAR_RELEASE_URL_BASE}/{target.name}"
     tmp = target.with_suffix(target.suffix + ".download")
@@ -147,8 +150,24 @@ def download_sidecar_binary(desktop_app_dir: Path) -> Path | None:
         if sys.platform != "win32":
             os.chmod(target, 0o755)
         return target
-    except (urllib.error.URLError, OSError):
+    except (urllib.error.URLError, OSError) as err:
         tmp.unlink(missing_ok=True)
+        log.warning("Sidecar binary download failed: %r", err)
+        log.warning("  url: %s", url)
+        reason = getattr(err, "reason", None)
+        if isinstance(reason, ssl.SSLError) or isinstance(err, ssl.SSLError):
+            log.warning(
+                "  This looks like TLS interception (common on corporate "
+                "networks). Download the file in your browser instead and "
+                "place it at: %s",
+                target,
+            )
+        else:
+            log.warning(
+                "  If this host blocks GitHub release downloads, fetch the "
+                "file in your browser and place it at: %s",
+                target,
+            )
         return None
 
 
