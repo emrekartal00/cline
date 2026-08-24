@@ -79,6 +79,11 @@ class App:
         # (the webview caches the resolved endpoint including the token).
         env["CLINE_SIDECAR_APPROVAL_TOKEN"] = self.approval_token
         env["CLINE_SIDECAR_PORT"] = str(self._chosen_sidecar_port)
+        # Run the agent in-process (no separate Hub daemon). Hub mode needs to
+        # spawn a runtime for the daemon, which fails on locked-down machines
+        # ("No compatible hub runtime is available"). Local mode is
+        # self-contained. Override with CLINE_SIDECAR_BACKEND_MODE if needed.
+        env.setdefault("CLINE_SIDECAR_BACKEND_MODE", "local")
         if ui_port not in (DEFAULT_UI_PORT,):
             # Non-default UI port is not in the sidecar's built-in Origin
             # allowlist; register it or the WS upgrade is refused.

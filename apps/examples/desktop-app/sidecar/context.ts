@@ -1015,14 +1015,21 @@ export async function initializeSessionManager(
 	ctx: SidecarContext,
 ): Promise<void> {
 	setHomeDirIfUnset(homedir());
+	// Default to the shared hub daemon, but allow forcing in-process execution
+	// via CLINE_SIDECAR_BACKEND_MODE=local. "local" needs no separate hub
+	// runtime — essential on locked-down machines (e.g. Windows where spawning
+	// the hub is blocked), where hub mode throws "No compatible hub runtime".
+	const backendMode = (
+		process.env.CLINE_SIDECAR_BACKEND_MODE?.trim() || "hub"
+	) as "hub" | "auto" | "local";
 	const sessionManager = await ClineCore.create({
 		clientName: "cline-code",
-		backendMode: "hub",
+		backendMode,
 		capabilities: createSidecarRuntimeCapabilities(ctx),
 		logger: ctx.logger,
 		telemetry: ctx.telemetry,
 		hub: {
-			strategy: "require-hub",
+			strategy: backendMode === "hub" ? "require-hub" : "prefer-hub",
 			workspaceRoot: ctx.workspaceRoot,
 			cwd: ctx.workspaceRoot,
 			clientType: "code-sidecar",
