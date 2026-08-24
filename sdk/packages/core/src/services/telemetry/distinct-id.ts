@@ -42,6 +42,13 @@ function resolveMachineIdSync(): ((original?: boolean) => string) | undefined {
 }
 
 function getMachineDistinctId(): string | undefined {
+	// Escape hatch for locked-down machines: node-machine-id shells out to
+	// `reg.exe` on Windows to read the machine GUID, which prints "registry
+	// editing has been disabled by your administrator" when the DisableRegistryTools
+	// policy is set. Skip it entirely and use the generated file-based id.
+	if (process.env.CLINE_SKIP_MACHINE_ID === "1") {
+		return undefined;
+	}
 	try {
 		const machineIdSync = resolveMachineIdSync();
 		if (!machineIdSync) {
