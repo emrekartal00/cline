@@ -98,4 +98,5 @@ apps/examples/desktop-app/.cursor/settings.json
 !apps/examples/desktop-app/webview/out
 !apps/examples/desktop-app/webview/out/**
 !apps/examples/desktop-app/src-tauri/bin
-!apps/examples/desktop-app/src-tauri/bin/**
+apps/examples/desktop-app/src-tauri/bin/**
+!apps/examples/desktop-app/src-tauri/bin/code-sidecar-aarch64-apple-darwin

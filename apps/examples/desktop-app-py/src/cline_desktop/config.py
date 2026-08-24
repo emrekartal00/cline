@@ -96,11 +96,60 @@ def find_bun() -> str | None:
     return None
 
 
+def sidecar_binary_path(desktop_app_dir: Path) -> Path:
+    """Expected location/name of the compiled sidecar binary for this host."""
+    suffix = ".exe" if sys.platform == "win32" else ""
+    return desktop_app_dir / "src-tauri" / "bin" / f"code-sidecar-{host_triple()}{suffix}"
+
+
 def find_sidecar_binary(desktop_app_dir: Path) -> Path | None:
     """Compiled sidecar binary produced by `bun run build:sidecar:bin`."""
-    suffix = ".exe" if sys.platform == "win32" else ""
-    path = desktop_app_dir / "src-tauri" / "bin" / f"code-sidecar-{host_triple()}{suffix}"
+    path = sidecar_binary_path(desktop_app_dir)
     return path if path.is_file() else None
+
+
+# Release that hosts precompiled sidecar binaries too large to commit
+# (GitHub caps repo files at 100 MB; the Windows binary is ~134 MB).
+SIDECAR_RELEASE_URL_BASE = (
+    "https://github.com/emrekartal00/cline/releases/download/sidecar-bin-v1"
+)
+
+
+def download_sidecar_binary(desktop_app_dir: Path) -> Path | None:
+    """Fetch the platform's sidecar binary from the GitHub release.
+
+    Returns the binary path, or None if the download failed (e.g. offline or
+    no prebuilt binary published for this platform).
+    """
+    import urllib.error
+    import urllib.request
+
+    target = sidecar_binary_path(desktop_app_dir)
+    url = f"{SIDECAR_RELEASE_URL_BASE}/{target.name}"
+    tmp = target.with_suffix(target.suffix + ".download")
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with urllib.request.urlopen(url, timeout=30) as resp, open(tmp, "wb") as out:
+            total = int(resp.headers.get("Content-Length") or 0)
+            copied = 0
+            while chunk := resp.read(1024 * 1024):
+                out.write(chunk)
+                copied += len(chunk)
+                if total:
+                    print(
+                        f"\rDownloading sidecar binary: {copied // (1024*1024)}"
+                        f"/{total // (1024*1024)} MB",
+                        end="",
+                        flush=True,
+                    )
+        print()
+        tmp.replace(target)
+        if sys.platform != "win32":
+            os.chmod(target, 0o755)
+        return target
+    except (urllib.error.URLError, OSError):
+        tmp.unlink(missing_ok=True)
+        return None
 
 
 def pick_free_port() -> int:

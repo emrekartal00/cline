@@ -68,24 +68,30 @@ class SidecarSupervisor:
         if compiled:
             return [str(compiled)], self._paths.desktop_app_dir
 
+        # No local binary for this platform: fetch the prebuilt one from the
+        # GitHub release (the Windows binary is too large to ship in the repo).
+        from .config import download_sidecar_binary, sidecar_binary_path
+
+        log.info(
+            "No sidecar binary for this platform; downloading prebuilt binary "
+            "(one-time, ~85-135 MB)..."
+        )
+        downloaded = download_sidecar_binary(self._paths.desktop_app_dir)
+        if downloaded:
+            return [str(downloaded)], self._paths.desktop_app_dir
+        log.warning("Sidecar binary download failed; falling back to bun")
+
         bun = find_bun()
         if not bun:
-            from .config import host_triple
-
-            expected = (
-                self._paths.desktop_app_dir
-                / "src-tauri"
-                / "bin"
-                / f"code-sidecar-{host_triple()}"
-            )
             raise SidecarError(
-                "No compiled sidecar binary found and bun is not installed.\n"
-                f"  looked for binary at: {expected}\n"
+                "No compiled sidecar binary found, the prebuilt-binary download "
+                "failed, and bun is not installed.\n"
+                f"  looked for binary at: {sidecar_binary_path(self._paths.desktop_app_dir)}\n"
                 f"  desktop-app dir in use: {self._paths.desktop_app_dir}\n"
                 "  bun searched on PATH plus ~/.bun/bin, /opt/homebrew/bin, /usr/local/bin\n"
-                "Fixes: re-download the repo ZIP (recent versions bundle the binary for "
-                "Apple Silicon macOS), run `bun run build:sidecar:bin` in "
-                "apps/examples/desktop-app, or install bun (https://bun.sh)."
+                "Fixes: check your internet connection and rerun, run "
+                "`bun run build:sidecar:bin` in apps/examples/desktop-app, or "
+                "install bun (https://bun.sh)."
             )
         entry = self._paths.desktop_app_dir / "sidecar" / "index.ts"
         return [bun, "run", str(entry)], self._paths.workspace_root
