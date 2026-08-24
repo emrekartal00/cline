@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+src/cline_desktop/__init__.py
+src/cline_desktop/__main__.py
+src/cline_desktop/app.py
+src/cline_desktop/bootstrap.py
+src/cline_desktop/bridge.py
+src/cline_desktop/config.py
+src/cline_desktop/sidecar.py
+src/cline_desktop/webserver.py
+src/cline_desktop.egg-info/PKG-INFO
+src/cline_desktop.egg-info/SOURCES.txt
+src/cline_desktop.egg-info/dependency_links.txt
+src/cline_desktop.egg-info/entry_points.txt
+src/cline_desktop.egg-info/requires.txt
+src/cline_desktop.egg-info/top_level.txt

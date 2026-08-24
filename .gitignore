@@ -93,3 +93,9 @@ apps/examples/desktop-app/webview/.next
 # Next.js generated type shim (churns between dev and build)
 apps/examples/desktop-app/webview/next-env.d.ts
 apps/examples/desktop-app/.cursor/settings.json
+
+# Python desktop app: ship built artifacts so a ZIP download runs out of the box
+!apps/examples/desktop-app/webview/out
+!apps/examples/desktop-app/webview/out/**
+!apps/examples/desktop-app/src-tauri/bin
+!apps/examples/desktop-app/src-tauri/bin/**

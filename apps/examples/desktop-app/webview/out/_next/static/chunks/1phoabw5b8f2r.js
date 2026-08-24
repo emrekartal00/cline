@@ -1,0 +1,1 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,48964,i=>{"use strict";var t=i.i(73971);i.s([],95770),i.i(95770),i.s(["Mermaid",()=>t.l],48964)}]);

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cline-desktop"
+version = "0.1.0"
+description = "Python desktop shell for Cline: a pywebview window that hosts the existing Next.js webview and supervises the TypeScript sidecar backend."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = ["pywebview>=5.1"]
+
+[project.optional-dependencies]
+# Linux fallback when GTK/WebKit2 (PyGObject) is unavailable.
+qt = ["pywebview[qt]>=5.1"]
+
+[project.scripts]
+cline-desktop = "cline_desktop.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,2 @@
+[console_scripts]
+cline-desktop = cline_desktop.__main__:main
