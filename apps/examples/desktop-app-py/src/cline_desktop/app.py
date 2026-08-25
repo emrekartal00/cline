@@ -41,6 +41,7 @@ class Options:
     no_window: bool = False
     debug: bool = False
     insecure_tls: bool = False
+    omit_model: bool = False
     sidecar_bin: Path | None = None
     sidecar_port: int | None = None
     ui_port: int | None = None
@@ -90,6 +91,8 @@ class App:
         env.setdefault("CLINE_SKIP_MACHINE_ID", "1")
         if self.options.insecure_tls:
             env["CLINE_SIDECAR_INSECURE_TLS"] = "1"
+        if self.options.omit_model:
+            env["CLINE_SIDECAR_OMIT_MODEL"] = "1"
         if ui_port not in (DEFAULT_UI_PORT,):
             # Non-default UI port is not in the sidecar's built-in Origin
             # allowlist; register it or the WS upgrade is refused.

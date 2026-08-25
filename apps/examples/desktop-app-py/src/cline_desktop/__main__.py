@@ -35,6 +35,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Disable TLS certificate verification for API calls (self-signed / internal-CA enterprise endpoints)",
     )
+    parser.add_argument(
+        "--omit-model",
+        action="store_true",
+        help="Strip the 'model' field from chat/completions requests (single-model endpoints that reject a model field, e.g. corporate GGUF servers)",
+    )
     parser.add_argument("--sidecar-bin", type=Path, help="Path to a compiled code-sidecar binary")
     parser.add_argument("--sidecar-port", type=int, help="Preferred sidecar port (default 3126)")
     parser.add_argument("--ui-port", type=int, help="Preferred UI port (default 3125)")
@@ -52,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         no_window=args.no_window,
         debug=args.debug,
         insecure_tls=args.insecure_tls,
+        omit_model=args.omit_model,
         sidecar_bin=args.sidecar_bin,
         sidecar_port=args.sidecar_port,
         ui_port=args.ui_port,

@@ -66,6 +66,47 @@ async function main() {
 		}
 	}
 
+	// Strip the `model` field from outgoing chat/completions requests when
+	// CLINE_SIDECAR_OMIT_MODEL=1. Needed for single-model endpoints (e.g. a
+	// corporate GGUF/llama.cpp server) that reject any request carrying a
+	// `model` field — the endpoint *is* the model. Whatever model id is
+	// configured (including the gpt-4o default) is removed before it hits the
+	// wire. Only touches JSON bodies on *completions paths.
+	if (process.env.CLINE_SIDECAR_OMIT_MODEL === "1") {
+		const originalFetch = globalThis.fetch;
+		globalThis.fetch = (async (
+			input: Parameters<typeof fetch>[0],
+			init?: Parameters<typeof fetch>[1],
+		) => {
+			try {
+				const url =
+					typeof input === "string"
+						? input
+						: input instanceof URL
+							? input.href
+							: (input as Request).url;
+				if (
+					init?.body &&
+					typeof init.body === "string" &&
+					/\/(chat\/)?completions(\?|$)/.test(url)
+				) {
+					const parsed = JSON.parse(init.body);
+					if (parsed && typeof parsed === "object" && "model" in parsed) {
+						delete parsed.model;
+						init = { ...init, body: JSON.stringify(parsed) };
+					}
+				}
+			} catch {
+				// Any parse/inspection failure: send the request unchanged.
+			}
+			return originalFetch(input, init);
+		}) as typeof fetch;
+		console.error(
+			"[cline-sidecar] Omitting `model` from chat/completions requests " +
+				"(CLINE_SIDECAR_OMIT_MODEL=1)",
+		);
+	}
+
 	// When launched from Finder/the Dock the app inherits launchd's minimal
 	// PATH, so agent-spawned processes can't find shell-profile-installed
 	// tools like `gh`. Kick resolution off first so it overlaps the rest of
