@@ -40,6 +40,7 @@ class Options:
     attach: bool = False
     no_window: bool = False
     debug: bool = False
+    insecure_tls: bool = False
     sidecar_bin: Path | None = None
     sidecar_port: int | None = None
     ui_port: int | None = None
@@ -87,6 +88,8 @@ class App:
         # Avoid node-machine-id's reg.exe call, which is blocked (and prints a
         # scary message) on machines with the DisableRegistryTools policy.
         env.setdefault("CLINE_SKIP_MACHINE_ID", "1")
+        if self.options.insecure_tls:
+            env["CLINE_SIDECAR_INSECURE_TLS"] = "1"
         if ui_port not in (DEFAULT_UI_PORT,):
             # Non-default UI port is not in the sidecar's built-in Origin
             # allowlist; register it or the WS upgrade is refused.

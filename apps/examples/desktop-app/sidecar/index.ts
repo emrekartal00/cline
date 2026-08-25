@@ -47,6 +47,25 @@ async function main() {
 		throw new Error("sidecar requires Bun or Node.js (>=22)");
 	}
 
+	// Disable TLS certificate verification for outgoing requests when
+	// CLINE_SIDECAR_INSECURE_TLS=1. Needed for enterprise endpoints with a
+	// self-signed or internal-CA certificate. Node's global fetch (undici,
+	// used by the LLM providers) ignores NODE_TLS_REJECT_UNAUTHORIZED, so we
+	// install a global undici dispatcher; the env var covers node:https paths.
+	if (process.env.CLINE_SIDECAR_INSECURE_TLS === "1") {
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+		try {
+			const { setGlobalDispatcher, Agent } = await import("undici");
+			setGlobalDispatcher(new Agent({ connect: { rejectUnauthorized: false } }));
+			console.error(
+				"[cline-sidecar] WARNING: TLS certificate verification disabled " +
+					"(CLINE_SIDECAR_INSECURE_TLS=1)",
+			);
+		} catch (error) {
+			console.error("[cline-sidecar] Failed to disable TLS verification:", error);
+		}
+	}
+
 	// When launched from Finder/the Dock the app inherits launchd's minimal
 	// PATH, so agent-spawned processes can't find shell-profile-installed
 	// tools like `gh`. Kick resolution off first so it overlaps the rest of
