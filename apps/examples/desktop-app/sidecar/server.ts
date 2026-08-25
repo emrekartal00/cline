@@ -240,20 +240,29 @@ export function createFetchHandler(
 			);
 		}
 
-		if (
-			url.pathname === "/transport" &&
-			isTrustedRequestOrigin(req) &&
-			server.upgrade(req, {
-				data: {
-					// Originless clients remain supported for local integrations, but only
-					// the browser-hosted desktop UI may receive or resolve approvals.
-					canApproveTools:
-						Boolean(readOrigin(req)) &&
-						hasValidApprovalToken(url, approvalToken),
-				},
-			})
-		) {
-			return undefined;
+		if (url.pathname === "/transport") {
+			// Require BOTH a trusted origin and a valid approval token to open
+			// the transport at all. Without this, any local process (loopback
+			// is shared by all local users) could connect with no token and
+			// read secrets / drive the agent via commands.
+			if (
+				!isTrustedRequestOrigin(req) ||
+				!hasValidApprovalToken(url, approvalToken)
+			) {
+				return new Response(null, { status: 403 });
+			}
+			if (
+				server.upgrade(req, {
+					data: {
+						// Only a browser-origin client may receive/resolve tool
+						// approvals; token validity is already guaranteed above.
+						canApproveTools: Boolean(readOrigin(req)),
+					},
+				})
+			) {
+				return undefined;
+			}
+			return new Response(null, { status: 426 });
 		}
 
 		if (url.pathname === "/api/marketplace/catalog") {

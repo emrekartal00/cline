@@ -31,6 +31,15 @@ class SidecarError(RuntimeError):
     pass
 
 
+def _redact_token(endpoint: str | None) -> str:
+    """Strip the approval_token query param so it never reaches logs."""
+    if not endpoint:
+        return str(endpoint)
+    import re
+
+    return re.sub(r"(approval_token=)[^&]*", r"\1<redacted>", endpoint)
+
+
 class SidecarSupervisor:
     """Owns the sidecar process for the lifetime of the app.
 
@@ -160,7 +169,12 @@ class SidecarSupervisor:
                 if isinstance(payload, dict) and payload.get("type") == "ready":
                     self.ws_endpoint = payload.get("wsEndpoint") or payload.get("endpoint")
                     self.http_endpoint = payload.get("endpoint")
-                    log.info("Sidecar ready: %s (pid=%s)", self.ws_endpoint, payload.get("pid"))
+                    # Never log the approval_token (it gates the transport).
+                    log.info(
+                        "Sidecar ready: %s (pid=%s)",
+                        _redact_token(self.ws_endpoint),
+                        payload.get("pid"),
+                    )
                     self._ready.set()
                     continue
             log.info("[desktop-backend] %s", line)

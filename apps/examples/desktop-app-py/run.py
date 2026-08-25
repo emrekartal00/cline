@@ -44,6 +44,14 @@ def ensure_pywebview() -> bool:
         return True
     except ImportError:
         pass
+    import os
+    if os.environ.get("CLINE_DESKTOP_NO_DOWNLOAD") == "1":
+        print(
+            "pywebview not found and downloads are blocked "
+            "(CLINE_DESKTOP_NO_DOWNLOAD=1). Pre-install 'pywebview', or run "
+            "with --no-window to use a browser instead."
+        )
+        return False
     print(f"pywebview not found — installing into {sys.executable} ...")
     result = subprocess.run([sys.executable, "-m", "pip", "install", "pywebview"])
     if result.returncode != 0:

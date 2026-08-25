@@ -606,11 +606,17 @@ async function resolveSystemPrompt(config: JsonRecord): Promise<string> {
 }
 
 function resolveToolPolicies(
-	config: JsonRecord,
+	_config: JsonRecord,
 ): { "*": { autoApprove: boolean } } | undefined {
+	// Enterprise-safe default: require explicit user approval for EVERY tool
+	// (shell commands, file writes/deletes, etc.). We deliberately ignore the
+	// webview's autoApproveTools flag (it always sends true) so approval cannot
+	// be silently disabled from the UI. Opt back into auto-approval only via an
+	// explicit server-side env var.
+	const autoApprove = process.env.CLINE_SIDECAR_AUTO_APPROVE_TOOLS === "1";
 	return {
 		"*": {
-			autoApprove: config.autoApproveTools !== false,
+			autoApprove,
 		},
 	};
 }

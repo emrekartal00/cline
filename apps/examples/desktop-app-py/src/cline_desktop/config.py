@@ -168,6 +168,13 @@ def ensure_node_runtime() -> str | None:
     node = find_node()
     if node:
         return node
+    if os.environ.get("CLINE_DESKTOP_NO_DOWNLOAD") == "1":
+        print(
+            "No Node.js found and downloads are blocked "
+            "(CLINE_DESKTOP_NO_DOWNLOAD=1). Pre-install 'nodejs-wheel-binaries' "
+            "(or a system Node >=22) before launching."
+        )
+        return None
     print("No Node.js found — installing it as a pip package (nodejs-wheel-binaries)...")
     result = subprocess.run(
         [sys.executable, "-m", "pip", "install", "nodejs-wheel-binaries"]
@@ -205,6 +212,17 @@ def download_sidecar_binary(desktop_app_dir: Path) -> Path | None:
     import urllib.request
 
     log = logging.getLogger("cline_desktop.config")
+
+    # Enterprise: forbid runtime downloads of executable code entirely. Admins
+    # pre-provision the sidecar (the JS bundle ships in the repo; Node comes
+    # from a pre-installed pip package), so no download should ever be needed.
+    if os.environ.get("CLINE_DESKTOP_NO_DOWNLOAD") == "1":
+        log.error(
+            "Sidecar binary download blocked (CLINE_DESKTOP_NO_DOWNLOAD=1). "
+            "Pre-provision the JS bundle and a Node runtime instead."
+        )
+        return None
+
     target = sidecar_binary_path(desktop_app_dir)
     url = f"{SIDECAR_RELEASE_URL_BASE}/{target.name}"
     tmp = target.with_suffix(target.suffix + ".download")
