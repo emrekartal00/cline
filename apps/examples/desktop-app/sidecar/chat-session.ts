@@ -431,6 +431,21 @@ function buildCoreSessionConfig(config: JsonRecord): JsonRecord {
 		systemPrompt: config.systemPrompt ?? config.system_prompt ?? "",
 		maxIterations: config.maxIterations ?? config.max_iterations,
 		enableTools: config.enableTools ?? config.enable_tools ?? true,
+		// The session manifest schema requires these as booleans. In hub mode
+		// the hub supplied defaults; in local mode they'd be undefined and fail
+		// validation ("expected boolean, received undefined"). Default off.
+		enableSpawnAgent:
+			typeof config.enableSpawnAgent === "boolean"
+				? config.enableSpawnAgent
+				: typeof config.enable_spawn_agent === "boolean"
+					? config.enable_spawn_agent
+					: false,
+		enableAgentTeams:
+			typeof config.enableAgentTeams === "boolean"
+				? config.enableAgentTeams
+				: typeof config.enable_agent_teams === "boolean"
+					? config.enable_agent_teams
+					: false,
 		...(thinking !== undefined ? { thinking } : {}),
 		...(reasoningEffort ? { reasoningEffort } : {}),
 		...(thinkingBudgetTokens !== undefined ? { thinkingBudgetTokens } : {}),
