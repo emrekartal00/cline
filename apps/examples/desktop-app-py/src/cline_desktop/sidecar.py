@@ -73,12 +73,6 @@ class SidecarSupervisor:
                 raise SidecarError(f"Sidecar binary not found: {self._explicit_bin}")
             return [str(self._explicit_bin)], self._paths.desktop_app_dir
 
-        compiled = find_sidecar_binary(self._paths.desktop_app_dir)
-        if compiled:
-            return [str(compiled)], self._paths.desktop_app_dir
-
-        # Preferred exe-free path: the committed single-file JS bundle run
-        # under Node.js (>=22). No executables shipped or downloaded.
         from .config import (
             download_sidecar_binary,
             find_node,
@@ -86,35 +80,44 @@ class SidecarSupervisor:
             sidecar_binary_path,
         )
 
+        # Preferred path: the committed single-file JS bundle run under Node.js
+        # (>=22). This is the single source of truth — always current and
+        # cross-platform — so it is tried BEFORE any compiled binary, which
+        # could be a stale/old build that would otherwise win. No executables
+        # shipped or downloaded.
         bundle = find_sidecar_node_bundle(self._paths.desktop_app_dir)
         node = find_node() if bundle else None
         if bundle and node:
             log.info("Running sidecar bundle under Node.js: %s", node)
             return [node, str(bundle)], self._paths.desktop_app_dir
 
-        # Otherwise fetch the prebuilt compiled binary from the GitHub
-        # release (the Windows one is too large to ship in the repo).
-        log.info(
-            "No sidecar binary for this platform; downloading prebuilt binary "
-            "(one-time, ~85-135 MB)..."
-        )
+        # Fallback: a locally present compiled binary (only if there is no
+        # Node runtime to run the bundle).
+        compiled = find_sidecar_binary(self._paths.desktop_app_dir)
+        if compiled:
+            return [str(compiled)], self._paths.desktop_app_dir
+
+        # Last resort: download a prebuilt binary (blocked when
+        # CLINE_DESKTOP_NO_DOWNLOAD=1; the hosted release may be absent).
+        log.info("No local sidecar runtime; attempting prebuilt-binary download...")
         downloaded = download_sidecar_binary(self._paths.desktop_app_dir)
         if downloaded:
             return [str(downloaded)], self._paths.desktop_app_dir
-        log.warning("Sidecar binary download failed; falling back to bun")
+        log.warning("Sidecar binary download unavailable; falling back to bun")
 
         bun = find_bun()
         if not bun:
             raise SidecarError(
                 "Could not find any way to run the sidecar backend.\n"
-                f"  compiled binary: not found at "
-                f"{sidecar_binary_path(self._paths.desktop_app_dir)}\n"
                 f"  node bundle: {'found but Node.js is not installed' if bundle else 'not found'} "
                 f"({self._paths.desktop_app_dir / 'sidecar' / 'dist-node' / 'sidecar-node.mjs'})\n"
-                "  prebuilt-binary download: failed (see warnings above)\n"
+                f"  compiled binary: not found at "
+                f"{sidecar_binary_path(self._paths.desktop_app_dir)}\n"
+                "  prebuilt-binary download: unavailable (see warnings above)\n"
                 "  bun: not installed\n"
-                "Easiest fix without any .exe files: install Node.js >=22 from "
-                "https://nodejs.org (official installer) and rerun."
+                "Fix: install a Node.js runtime — `pip install nodejs-wheel-binaries` "
+                "into the launching Python, or Node.js >=22 from https://nodejs.org — "
+                "and rerun."
             )
         entry = self._paths.desktop_app_dir / "sidecar" / "index.ts"
         return [bun, "run", str(entry)], self._paths.workspace_root

@@ -94,9 +94,9 @@ apps/examples/desktop-app/webview/.next
 apps/examples/desktop-app/webview/next-env.d.ts
 apps/examples/desktop-app/.cursor/settings.json
 
-# Python desktop app: ship built artifacts so a ZIP download runs out of the box
+# Python desktop app: ship built artifacts so a ZIP download runs out of the box.
+# The webview static export + the single-file Node sidecar bundle are the
+# cross-platform source of truth. Compiled per-platform binaries are NOT
+# committed (they go stale and would win over the fresh bundle).
 !apps/examples/desktop-app/webview/out
 !apps/examples/desktop-app/webview/out/**
-!apps/examples/desktop-app/src-tauri/bin
-apps/examples/desktop-app/src-tauri/bin/**
-!apps/examples/desktop-app/src-tauri/bin/code-sidecar-aarch64-apple-darwin
