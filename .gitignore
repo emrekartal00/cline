@@ -100,3 +100,6 @@ apps/examples/desktop-app/.cursor/settings.json
 # committed (they go stale and would win over the fresh bundle).
 !apps/examples/desktop-app/webview/out
 !apps/examples/desktop-app/webview/out/**
+
+apps/examples/desktop-app-py/**/__pycache__/
+apps/examples/desktop-app-py/**/*.pyc
